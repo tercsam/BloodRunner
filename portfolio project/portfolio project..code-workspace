@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"name": "portfolio project",
+			"path": "."
+		},
+		{
+			"name": "Assets",
+			"path": "../RayCasting2021-main/Assets"
+		}
+	],
+	"settings": {}
+}
