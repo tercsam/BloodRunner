@@ -4,7 +4,7 @@ from numba import njit
 
 def main():
     pg.init()
-    pg.display.set_caption("Dead and - A Python game by FinFET, thanks for playing!")
+    pg.display.set_caption("Blood Runner!")
     font = pg.font.SysFont("Courier New", 70)
     
     sounds = load_sounds()
@@ -35,19 +35,19 @@ def main():
                       [2, 1, 2, 1, 1, 0], #level 4
                       [2, 0, 0, 0, 0, 2]] #level 5
 
-    menu = [pg.image.load('Assets/Textures/menu0.png').convert_alpha()]
-    menu.append(pg.image.load('Assets/Textures/options.png').convert_alpha())
-    menu.append(pg.image.load('Assets/Textures/credits.png').convert_alpha())
-    menu.append(pg.image.load('Assets/Textures/menu1.png').convert_alpha())
-    hearts = pg.image.load('Assets/Textures/hearts.png').convert_alpha()
-    colonel = pg.image.load('Assets/Sprites/colonel1.png').convert_alpha()
-    hearts2 = pg.Surface.subsurface(hearts,(0,0,player_health*10,20))
-    exit1 = pg.image.load('Assets/Textures/exit.png').convert_alpha()
+    menu = [pg.image.load('Assets/Textures/menu0.png').convert_alpha()] # main menu
+    menu.append(pg.image.load('Assets/Textures/options.png').convert_alpha()) # options
+    menu.append(pg.image.load('Assets/Textures/credits.png').convert_alpha()) # credits
+    menu.append(pg.image.load('Assets/Textures/menu1.png').convert_alpha()) # pause
+    hearts = pg.image.load('Assets/Textures/hearts.png').convert_alpha() # health bar
+    colonel = pg.image.load('Assets/Sprites/colonel1.png').convert_alpha() # colonel
+    hearts2 = pg.Surface.subsurface(hearts,(0,0,player_health*10,20)) # health bar
+    exit1 = pg.image.load('Assets/Textures/exit.png').convert_alpha() # exit
     exit2 = 1
     exits = [pg.Surface.subsurface(exit1,(0,0,50,50)), pg.Surface.subsurface(exit1,(50,0,50,50))]
     splash = []
     for i in range(4):
-        splash.append(pg.image.load('Assets/Textures/splash'+str(i)+'.jpg').convert())
+        splash.append(pg.image.load('Assets/Textures/credits.png').convert())
     blood = pg.image.load('Assets/Textures/blood0.png').convert_alpha()
     blood_size = np.asarray(blood.get_size())
     sky1 = hearts.copy() # initialize with something to adjust resol on start
@@ -56,7 +56,7 @@ def main():
     splash_screen(msg, splash[0], clock, font, screen)
     msg = " "
     
-    while running:
+    while running: # main loop
         pg.display.update()
         ticks = pg.time.get_ticks()/200
         er = min(clock.tick()/500, 0.3)
@@ -66,16 +66,16 @@ def main():
                 sounds['died'].play()
                 newgame = 2
                 surf = splash[3].copy()
-            else:
+            else: # level cleared
                 level += 1
                 player_health = min(player_health+2, 20)
                 sounds['won'].play()
                 newgame = 1
-                if level > 5:
-                    level, newgame = 0, 2
-                    sounds['died'].play()
-                    surf = splash[2].copy()
-                    surf.blit(font.render('Total time: ' + str(round(timer,1)), 1, (255, 255, 255)), (20, 525))
+                if level > 5: # end of game
+                    level, newgame = 0, 2 
+                    sounds['died'].play() # end of game sound
+                    surf = splash[2].copy() # credits screen 
+                    surf.blit(font.render('Total time: ' + str(round(timer,1)), 1, (255, 255, 255)), (20, 525)) # total time played
                 else:
                     msg = "Cleared level " + str(level-1)+'!'
             splash_screen(msg, surf, clock, font, screen)
@@ -278,13 +278,13 @@ def movement(pressed_keys, posx, posy, rot, maph, et, rotv):
     rotv = rotv + np.clip((p_mouse[1])/200, -0.2, .2)
     rotv = np.clip(rotv, -0.999, .999)
 
-    if pressed_keys[pg.K_UP] or pressed_keys[ord('w')]:
+    if pressed_keys[pg.K_UP] or pressed_keys[ord('z')]:
         x, y, diag = x + et*np.cos(rot), y + et*np.sin(rot), 1
 
     elif pressed_keys[pg.K_DOWN] or pressed_keys[ord('s')]:
         x, y, diag = x - et*np.cos(rot), y - et*np.sin(rot), 1
         
-    if pressed_keys[pg.K_LEFT] or pressed_keys[ord('a')]:
+    if pressed_keys[pg.K_LEFT] or pressed_keys[ord('q')]:
         et = et/(diag+1)
         x, y = x + et*np.sin(rot), y - et*np.cos(rot)
         
@@ -328,8 +328,9 @@ def gen_map(size):
     
     return posx, posy, rot, rotv, maph, mapc, exitx, exity, stepscount
 
+
 def load_map(level):
-    mapc = pg.surfarray.array3d(pg.image.load('Assets/Levels/map'+str(level)+'.png'))
+    mapc = pg.surfarray.array3d(pg.image.load('Assets/Levels/map'+str(level)+'.png')) # map colors 
     size = len(mapc)
     maph = np.random.choice([1, 2, 3, 4], (size,size))
     colors = np.asarray([[0,0,0], [255,255,255], [127,127,127]])
@@ -361,6 +362,7 @@ def load_map(level):
 @njit(cache=True)
 def new_frame(posx, posy, rot, frame, sky, floor, hres, halfvres, mod, maph, size, wall, mapc,
               exitx, exity, nenemies, rotv, door, window, bwall, exit2):
+    # draw the frame    
     offset = -int(halfvres*rotv)
     for i in range(hres):
         rot_i = rot + np.deg2rad(i/mod - 30)
@@ -480,6 +482,7 @@ def new_frame(posx, posy, rot, frame, sky, floor, hres, halfvres, mod, maph, siz
 
 @njit(cache=True)
 def vision(posx, posy, enx, eny, dist2p, maph, size):
+    # check if enemy is in fov of player and not behind a wall or obstacle 
     cos, sin = (posx-enx)/dist2p, (posy-eny)/dist2p
     x, y = enx, eny
     seen = 1
@@ -644,14 +647,14 @@ def spawn_enemies(number, maph, msize, posx, posy, level=0):
 def get_sprites(level):
     sheet = pg.image.load('Assets/Sprites/zombie_n_skeleton'+str(level)+'.png').convert_alpha()
     sprites = [[], []]
-    swordsheet = pg.image.load('Assets/Sprites/gun1.png').convert_alpha() 
+    swordsheet = pg.image.load('Assets/Sprites/gun2.png').convert_alpha()
     sword = []
-    for i in range(3):
-        sword.append(pg.Surface.subsurface(swordsheet,(i*800,0,800,600)))
-        xx = i*32
+    for i in range(3): # 4 frames for the sword
+        sword.append(pg.Surface.subsurface(swordsheet,(i*322.5,0,322.5,193))) # 800x600 image 
+        xx = i*32 
         sprites[0].append([])
         sprites[1].append([])
-        for j in range(4):
+        for j in range(4): # 4 directions for each type of enemy
             yy = j*100
             sprites[0][i].append(pg.Surface.subsurface(sheet,(xx,yy,32,100)))
             sprites[1][i].append(pg.Surface.subsurface(sheet,(xx+96,yy,32,100)))
@@ -822,6 +825,7 @@ def splash_screen(msg, splash, clock, font, screen):
     running = 1
     clickdelay = 0
     while running:
+
         clickdelay += 1
         clock.tick(60)
         surf = splash.copy()
