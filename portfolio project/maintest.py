@@ -647,14 +647,14 @@ def spawn_enemies(number, maph, msize, posx, posy, level=0):
 def get_sprites(level):
     sheet = pg.image.load('Assets/Sprites/zombie_n_skeleton'+str(level)+'.png').convert_alpha()
     sprites = [[], []]
-    swordsheet = pg.image.load('Assets/Sprites/gun2.png').convert_alpha()
+    swordsheet = pg.image.load('Assets/Sprites/gun1.png').convert_alpha()
     sword = []
     for i in range(3): # 4 frames for the sword
-        sword.append(pg.Surface.subsurface(swordsheet,(i*322.5,0,322.5,193))) # 800x600 image 
+        sword.append(pg.Surface.subsurface(swordsheet,(i*800,0,800,600))) # 800x600 image 
         xx = i*32 
         sprites[0].append([])
         sprites[1].append([])
-        for j in range(4): # 4 directions for each type of enemy
+        for j in range(4):
             yy = j*100
             sprites[0][i].append(pg.Surface.subsurface(sheet,(xx,yy,32,100)))
             sprites[1][i].append(pg.Surface.subsurface(sheet,(xx+96,yy,32,100)))
